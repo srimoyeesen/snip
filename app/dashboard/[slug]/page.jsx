@@ -1,6 +1,7 @@
-// Per-link analytics (server component): clicks over the last 14 days, top
-// referrers, country split, device split. All aggregated in JS from the raw
-// clicks rows — fine for a starter; move to SQL aggregation as you scale.
+// Per-link analytics (server component): clicks over the last 14 days, unique
+// visitors, plus referrer / country / city / device / browser / OS breakdowns.
+// Aggregated in JS from the raw clicks rows — fine for a starter; move to SQL
+// aggregation as you scale.
 
 import { redirect, notFound } from "next/navigation";
 import { getServerClient } from "@/lib/supabase-server";
@@ -10,10 +11,29 @@ export const dynamic = "force-dynamic";
 function tally(rows, key) {
   const out = {};
   for (const r of rows) {
-    const v = r[key] || "unknown";
+    const v = r[key] || "Unknown";
     out[v] = (out[v] || 0) + 1;
   }
   return Object.entries(out).sort((a, b) => b[1] - a[1]);
+}
+
+function Breakdown({ title, rows, field, limit = 6 }) {
+  const items = tally(rows, field).slice(0, limit);
+  return (
+    <div className="card">
+      <strong>{title}</strong>
+      {items.length === 0 ? (
+        <div className="muted">No data yet</div>
+      ) : (
+        items.map(([k, v]) => (
+          <div key={k} className="bd-row">
+            <span className="muted">{k}</span>
+            <span>{v}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
 }
 
 export default async function LinkAnalytics({ params }) {
@@ -26,9 +46,12 @@ export default async function LinkAnalytics({ params }) {
   if (!link) notFound();
 
   const { data: clicks } = await supabase
-    .from("clicks").select("clicked_at, referrer, country, device").eq("link_id", link.id);
+    .from("clicks")
+    .select("clicked_at, referrer, country, region, city, device, browser, os, visitor_hash")
+    .eq("link_id", link.id);
 
   const rows = clicks || [];
+  const unique = new Set(rows.map((r) => r.visitor_hash).filter(Boolean)).size;
 
   // Clicks per day for the last 14 days.
   const byDay = {};
@@ -46,34 +69,29 @@ export default async function LinkAnalytics({ params }) {
   return (
     <div>
       <h1>/{link.slug}</h1>
-      <p className="subtitle">{rows.length} total clicks · → {link.destination_url}</p>
+      <p className="subtitle" style={{ wordBreak: "break-all" }}>→ {link.destination_url}</p>
+
+      <div className="stats">
+        <div className="stat"><div className="stat-num">{rows.length}</div><div className="stat-label">Total clicks</div></div>
+        <div className="stat"><div className="stat-num">{unique}</div><div className="stat-label">Unique visitors</div></div>
+      </div>
 
       <h3>Last 14 days</h3>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 28 }}>
         {Object.entries(byDay).map(([day, n]) => (
           <div key={day} title={`${day}: ${n}`}
-               style={{ flex: 1, background: "var(--accent)", borderRadius: 4,
+               style={{ flex: 1, background: "var(--brand)", borderRadius: 4,
                         height: `${(n / maxDay) * 100}%`, minHeight: 2 }} />
         ))}
       </div>
 
-      <div className="card">
-        <strong>Top referrers</strong>
-        {tally(rows, "referrer").slice(0, 5).map(([k, v]) => (
-          <div key={k} className="muted">{k} — {v}</div>
-        ))}
-      </div>
-      <div className="card">
-        <strong>Countries</strong>
-        {tally(rows, "country").slice(0, 5).map(([k, v]) => (
-          <div key={k} className="muted">{k} — {v}</div>
-        ))}
-      </div>
-      <div className="card">
-        <strong>Devices</strong>
-        {tally(rows, "device").map(([k, v]) => (
-          <div key={k} className="muted">{k} — {v}</div>
-        ))}
+      <div className="breakdowns">
+        <Breakdown title="Top referrers" rows={rows} field="referrer" />
+        <Breakdown title="Countries" rows={rows} field="country" />
+        <Breakdown title="Cities" rows={rows} field="city" />
+        <Breakdown title="Devices" rows={rows} field="device" />
+        <Breakdown title="Browsers" rows={rows} field="browser" />
+        <Breakdown title="Operating systems" rows={rows} field="os" />
       </div>
 
       <a href="/dashboard">← Back to all links</a>

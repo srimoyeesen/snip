@@ -6,8 +6,10 @@
 // then redirects.
 
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { getAdminClient } from "@/lib/supabase-server";
 import { isUrlSafe } from "@/lib/safe-browsing";
+import { parseUA } from "@/lib/ua";
 
 const RECHECK_AFTER_MS = 6 * 60 * 60 * 1000; // re-scan at most every 6 hours
 
@@ -50,12 +52,27 @@ export async function GET(request, { params }) {
 
   // Log the click. Vercel provides geo + UA headers for free.
   const ua = request.headers.get("user-agent") || "";
-  const device = /mobile|android|iphone|ipad/i.test(ua) ? "mobile" : "desktop";
+  const { browser, os, device } = parseUA(ua);
+
+  // Privacy-safe unique-visitor id: hash (ip + ua + link) — we never store the IP.
+  const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim();
+  const visitorHash = crypto
+    .createHash("sha256")
+    .update(`${ip}|${ua}|${link.id}`)
+    .digest("hex")
+    .slice(0, 32);
+
+  const city = request.headers.get("x-vercel-ip-city");
   await admin.from("clicks").insert({
     link_id: link.id,
     referrer: request.headers.get("referer") || null,
     country: request.headers.get("x-vercel-ip-country") || null,
+    region: request.headers.get("x-vercel-ip-country-region") || null,
+    city: city ? decodeURIComponent(city) : null,
     device,
+    browser,
+    os,
+    visitor_hash: visitorHash,
   });
 
   return NextResponse.redirect(link.destination_url, 302);

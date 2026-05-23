@@ -52,12 +52,17 @@ create index if not exists links_user_id_idx on public.links (user_id);
 -- clicks: one row per redirect, powers analytics
 -- ---------------------------------------------------------------------
 create table if not exists public.clicks (
-  id         bigint generated always as identity primary key,
-  link_id    bigint not null references public.links (id) on delete cascade,
-  clicked_at timestamptz not null default now(),
-  referrer   text,
-  country    text,
-  device     text                                       -- 'mobile' | 'desktop'
+  id           bigint generated always as identity primary key,
+  link_id      bigint not null references public.links (id) on delete cascade,
+  clicked_at   timestamptz not null default now(),
+  referrer     text,
+  country      text,
+  region       text,
+  city         text,
+  device       text,                                    -- 'mobile' | 'desktop'
+  browser      text,                                    -- Chrome / Safari / ...
+  os           text,                                    -- Windows / macOS / iOS / ...
+  visitor_hash text                                     -- privacy-safe unique-visitor id
 );
 
 create index if not exists clicks_link_id_idx on public.clicks (link_id);
