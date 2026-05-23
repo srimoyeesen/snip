@@ -32,9 +32,21 @@ export async function POST(request) {
   }
 
   const event = JSON.parse(body);
+  const admin = getAdminClient();
+
+  // One-time payment (current flow): unlock Starter when a Payment Link is paid.
+  if (event.event === "payment_link.paid") {
+    const pl = event?.payload?.payment_link?.entity;
+    const plUser = pl?.notes?.user_id;
+    if (plUser) {
+      await admin.from("profiles").update({ plan: "starter", billing_ref: pl.id }).eq("id", plUser);
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  // Recurring flow (kept for when subscriptions are enabled later).
   const sub = event?.payload?.subscription?.entity;
   const userId = sub?.notes?.user_id;
-  const admin = getAdminClient();
 
   if (userId && ACTIVATE.includes(event.event)) {
     await admin
