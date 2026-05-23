@@ -1,4 +1,4 @@
-# ShortLink — URL shortener with analytics
+# Snip — URL shortener with analytics
 
 A starter Next.js app: shorten links, track clicks, with a free tier and a
 $3/month Starter tier. Built on Next.js (App Router) + Supabase (database +
