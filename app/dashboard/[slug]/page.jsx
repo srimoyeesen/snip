@@ -66,6 +66,11 @@ export default async function LinkAnalytics({ params }) {
   }
   const maxDay = Math.max(1, ...Object.values(byDay));
 
+  // Clicks by hour of day (UTC).
+  const byHour = Array(24).fill(0);
+  for (const c of rows) byHour[new Date(c.clicked_at).getUTCHours()]++;
+  const maxHour = Math.max(1, ...byHour);
+
   return (
     <div>
       <h1>/{link.slug}</h1>
@@ -76,12 +81,26 @@ export default async function LinkAnalytics({ params }) {
         <div className="stat"><div className="stat-num">{unique}</div><div className="stat-label">Unique visitors</div></div>
       </div>
 
+      <div className="toolbar">
+        <a className="btn-ghost" href={`/api/export/clicks/${link.slug}`}>⬇ Download CSV</a>
+      </div>
+
       <h3>Last 14 days</h3>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 28 }}>
         {Object.entries(byDay).map(([day, n]) => (
           <div key={day} title={`${day}: ${n}`}
                style={{ flex: 1, background: "var(--brand)", borderRadius: 4,
                         height: `${(n / maxDay) * 100}%`, minHeight: 2 }} />
+        ))}
+      </div>
+
+      <h3>Busiest hours (UTC)</h3>
+      <div className="hours">
+        {byHour.map((n, h) => (
+          <div key={h} className="hour" title={`${h}:00 UTC — ${n} clicks`}>
+            <div className="hour-bar" style={{ height: `${(n / maxHour) * 100}%`, minHeight: 2 }} />
+            <span className="hour-label">{h % 6 === 0 ? h : ""}</span>
+          </div>
         ))}
       </div>
 

@@ -146,3 +146,31 @@ tbody tr:hover { background: #faf9ff; }
 .breakdowns strong { display: block; margin-bottom: 10px; }
 .bd-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 14px; }
 .bd-row span:last-child { font-weight: 600; }
+
+/* ---------- Toolbar / buttons ---------- */
+.toolbar { display: flex; justify-content: flex-end; margin: 0 0 12px; }
+.btn-ghost {
+  display: inline-block; background: #fff; color: var(--brand);
+  border: 1px solid var(--border); padding: 8px 14px; border-radius: 9px;
+  font-size: 14px; font-weight: 600;
+}
+.btn-ghost:hover { background: var(--bg-soft); text-decoration: none; }
+
+/* ---------- Table interactivity ---------- */
+.truncate { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slug-link { font-weight: 700; }
+.copy-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 7px;
+  margin-left: 8px; cursor: pointer; transition: background .15s, color .15s;
+}
+.copy-btn:hover { background: var(--bg-soft); color: var(--fg); }
+.row-actions { white-space: nowrap; text-align: right; }
+.row-actions a { margin-left: 14px; font-size: 13px; font-weight: 500; }
+
+/* ---------- Busiest-hours chart ---------- */
+.hours { display: flex; align-items: flex-end; gap: 3px; height: 110px; margin-bottom: 28px; }
+.hour { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.hour-bar { width: 100%; background: linear-gradient(180deg, var(--brand-2), var(--brand)); border-radius: 4px; }
+.hour-label { font-size: 10px; color: var(--muted); margin-top: 4px; height: 12px; }
+.hour:hover .hour-bar { filter: brightness(1.1); }

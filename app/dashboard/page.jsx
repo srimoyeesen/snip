@@ -1,11 +1,10 @@
 // Dashboard (server component). Lists the logged-in user's links with click
-// counts. RLS guarantees a user only ever sees their own rows.
-//
-// Click counts are aggregated in JS here for simplicity. Once you have lots of
-// data, replace this with a Postgres view or an RPC that does the GROUP BY.
+// counts + account-level overview cards. RLS guarantees a user only ever sees
+// their own rows. Click counts are aggregated in JS for simplicity.
 
 import { redirect } from "next/navigation";
 import { getServerClient } from "@/lib/supabase-server";
+import CopyButton from "@/components/CopyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +42,7 @@ export default async function Dashboard() {
   }
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const hasLinks = links && links.length > 0;
 
   return (
     <div>
@@ -61,25 +61,35 @@ export default async function Dashboard() {
         <div className="stat"><div className="stat-num">{links?.length || 0}</div><div className="stat-label">Total links</div></div>
       </div>
 
-      {(!links || links.length === 0) ? (
+      {!hasLinks ? (
         <p className="muted">No links yet. <a href="/">Create your first one →</a></p>
       ) : (
-        <table>
-          <thead>
-            <tr><th>Short link</th><th>Destination</th><th>Clicks</th></tr>
-          </thead>
-          <tbody>
-            {links.map((l) => (
-              <tr key={l.id}>
-                <td><a href={`${base}/${l.slug}`}>/{l.slug}</a></td>
-                <td className="muted" style={{ maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {l.destination_url}
-                </td>
-                <td><a href={`/dashboard/${l.slug}`}>{counts[l.id] || 0}</a></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="toolbar">
+            <a className="btn-ghost" href="/api/export/links">⬇ Export CSV</a>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Short link</th><th>Destination</th><th>Clicks</th><th></th></tr>
+            </thead>
+            <tbody>
+              {links.map((l) => (
+                <tr key={l.id}>
+                  <td>
+                    <a href={`/dashboard/${l.slug}`} className="slug-link">/{l.slug}</a>
+                    <CopyButton text={`${base}/${l.slug}`} />
+                  </td>
+                  <td className="muted truncate">{l.destination_url}</td>
+                  <td>{counts[l.id] || 0}</td>
+                  <td className="row-actions">
+                    <a href={`/dashboard/${l.slug}`}>Details</a>
+                    <a href={`${base}/${l.slug}`} target="_blank" rel="noreferrer">Open ↗</a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
     </div>
   );
