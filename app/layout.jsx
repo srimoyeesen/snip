@@ -38,7 +38,15 @@ export default async function RootLayout({ children }) {
         </header>
         <main className="container">{children}</main>
         <footer className="footer">
-          Spotted abuse? Email <a href="mailto:abuse@snip.app">abuse@snip.app</a>
+          <nav className="footer-links">
+            <a href="/about">About</a>
+            <a href="/pricing">Pricing</a>
+            <a href="/contact">Contact</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="/refund">Refunds</a>
+          </nav>
+          <div>Spotted abuse? Email <a href="mailto:abuse@snip.app">abuse@snip.app</a></div>
         </footer>
       </body>
     </html>
